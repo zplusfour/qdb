@@ -8,7 +8,9 @@ export type QDB = {
 	set(k: string, v: any): Promise<void>;
 	del(k: string): Promise<void>;
 	all(t?: string): Promise<DB>;
+	drop(c?: string): Promise<void>;
 	collection(c: string): Collection;
+	allCollections(): Promise<string[]>;
 };
 
 export type K = {
@@ -22,6 +24,7 @@ export type Collection = {
 	set(k: string, v: any): Promise<void>;
 	del(k: string): Promise<void>;
 	all(): Promise<DB>;
+	drop(c?: string): Promise<void>;
 };
 
 const set = (k: string, v: any): Promise<void> => {
@@ -94,7 +97,29 @@ const all = (t?: string): Promise<DB> => {
 	});
 };
 
-export const collection = (c: string): Collection => {
+const allCollections = (): Promise<string[]> => {
+	return new Promise((resolve, reject) => {
+		const fR: string[] = fs.readdirSync('./.config/qdb');
+		let collections: string[] = [];
+
+		for (const f of fR) {
+			if (fs.statSync('./.config/qdb/' + f).isDirectory()) collections.push(f);
+		}
+
+		resolve(collections);
+	});
+};
+
+const drop = (c: string): Promise<void> => {
+	return new Promise((resolve, reject) => {
+		if (fs.existsSync('./.config/qdb/' + c)) {
+			fs.rmSync('./.config/qdb/' + c, { recursive: true });
+			resolve();
+		} else reject(`${c} not found`);
+	});
+};
+
+const collection = (c: string): Collection => {
 	if (!fs.existsSync('./.config/qdb/' + c)) fs.mkdirSync('./.config/qdb/' + c);
 	if (!fs.existsSync('./.config/qdb/' + c + '/data.json'))
 		fs.writeFileSync('./.config/qdb/' + c + '/data.json', '[]');
@@ -102,10 +127,11 @@ export const collection = (c: string): Collection => {
 		get: (k: string) => get(`${c}.${k}`),
 		set: (k: string, v: any) => set(`${c}.${k}`, v),
 		del: (k: string) => del(`${c}.${k}`),
-		all: () => all(c)
+		all: () => all(c),
+		drop: () => drop(c)
 	};
 };
 
 export const init = (): QDB => {
-	return { set, get, del, all, collection };
+	return { set, get, del, all, collection, allCollections, drop };
 };
