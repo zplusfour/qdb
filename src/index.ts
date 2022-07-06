@@ -21,6 +21,7 @@ export type Collection = {
 	get(k: string): Promise<string>;
 	set(k: string, v: any): Promise<void>;
 	del(k: string): Promise<void>;
+	all(): Promise<DB>;
 };
 
 const set = (k: string, v: any): Promise<void> => {
@@ -100,7 +101,8 @@ export const collection = (c: string): Collection => {
 	return {
 		get: (k: string) => get(`${c}.${k}`),
 		set: (k: string, v: any) => set(`${c}.${k}`, v),
-		del: (k: string) => del(`${c}.${k}`)
+		del: (k: string) => del(`${c}.${k}`),
+		all: () => all(c)
 	};
 };
 
